@@ -3,8 +3,6 @@ use actix_web::web;
 use sqlx::{sqlite::{SqlitePool, SqliteRow}, Error, query, Row};
 use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
-use std::env;
-use md5;
 
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
