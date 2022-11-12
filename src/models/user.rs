@@ -11,8 +11,8 @@ struct User {
     pub id: i64,
     pub username: String,
     pub hashed_password: String,
+    pub role: String,
     pub token: String,
-    pub public_key: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -21,7 +21,6 @@ struct User {
 struct NewUser<'a> {
     pub username: &'a str,
     pub password: &'a str,
-    pub public_key: &'a str,
 }
 
 impl User{
@@ -30,8 +29,8 @@ impl User{
             id: row.get("id"),
             username: row.get("username"),
             hashed_password: row.get("hashed_password"),
+            role: row.get("role"),
             token: row.get("token"),
-            public_key: row.get("public_key"),
             created_at: row.get("created_at"),
             updated_at: row.get("updated_at"),
         }
@@ -51,23 +50,34 @@ impl User{
         format!("{:x}", md5::compute(composition))
     }
 
-    pub async fn create(pool: &web::Data<SqlitePool>, new: &NewUser<'_>) -> Result<User, Error>{
+    pub async fn create(pool: &web::Data<SqlitePool>, role: &str, new: &NewUser<'_>) -> Result<User, Error>{
         let hashed_password = Self::wrap(&new.password);
         let next_id = Self::next_id(&pool).await.unwrap();
         let token = Self::wrap(&next_id.to_string());
         let created_at = Utc::now();
         let updated_at = Utc::now();
-        let sql = "INSERT INTO users (username, hashed_password, token,
-            public_key, created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6) 
-            RETURNING id, username, hashed_password, token, public_key, 
-            created_at, updated_at;";
+        let sql = "INSERT INTO users (username, hashed_password, role, token,
+            created_at, updated_at) VALUES($1, $2, $3, $4, $5, $6) 
+            RETURNING id, username, hashed_password, role, token, created_at,
+            updated_at;";
         query(sql)
             .bind(&new.username)
             .bind(&hashed_password)
+            .bind(role)
             .bind(&token)
-            .bind(&new.public_key)
             .bind(&created_at)
             .bind(&updated_at)
+            .map(Self::from_row)
+            .fetch_one(pool.get_ref())
+            .await
+    }
+
+    pub async fn delete(pool: &web::Data<SqlitePool>, username: &str) -> Result<User, Error>{
+        let sql = "DELETE FROM users WHERE username = $1 RETURNING id,
+                   username, hashed_password, role, token, created_at,
+                   updated_at;";
+        query(sql)
+            .bind(username)
             .map(Self::from_row)
             .fetch_one(pool.get_ref())
             .await
