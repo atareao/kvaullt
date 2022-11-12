@@ -72,6 +72,15 @@ impl User{
             .await
     }
 
+    pub async fn read(pool: &web::Data<SqlitePool>, token: &str) -> Result<User, Error>{
+        let sql = "SELECT * FROM users WHERE token = $1";
+        query(sql)
+            .bind(token)
+            .map(Self::from_row)
+            .fetch_one(pool.get_ref())
+            .await
+    }
+
     pub async fn delete(pool: &web::Data<SqlitePool>, username: &str) -> Result<User, Error>{
         let sql = "DELETE FROM users WHERE username = $1 RETURNING id,
                    username, hashed_password, role, token, created_at,
