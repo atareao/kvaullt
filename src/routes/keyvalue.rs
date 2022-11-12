@@ -17,8 +17,9 @@ pub async fn create(req: HttpRequest, pool: web::Data<SqlitePool>, new: web::Jso
     }
 }
 
-#[get("/v1/kv")]
-pub async fn read(req: HttpRequest, pool: web::Data<SqlitePool>, key: String) -> impl Responder{
+#[get("/v1/kv/{key}")]
+pub async fn read(req: HttpRequest, pool: web::Data<SqlitePool>, path: web::Path<String>) -> impl Responder{
+    let key = path.into_inner();
     match User::from_request(&req, &pool).await {
         Some(user) => match KeyValue::read(&pool, user.id, &key).await {
             Ok(kv) => HttpResponse::Ok()

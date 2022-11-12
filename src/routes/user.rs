@@ -1,5 +1,6 @@
-use actix_web::{post, get, put, delete, web, HttpResponse, HttpRequest,
+use actix_web::{post, get, delete, web, HttpResponse, HttpRequest,
                 http::header::ContentType, Responder};
+use log::info;
 use serde_json::json;
 use sqlx::SqlitePool;
 use crate::models::user::{User, Role, NewUser};
@@ -18,6 +19,31 @@ pub async fn create(req: HttpRequest, pool: web::Data<SqlitePool>, new: web::Jso
             }else{
                 HttpResponse::Unauthorized().finish()
             },
+        None => HttpResponse::Unauthorized().finish(),
+    }
+}
+
+#[get("/v1/user/{username}")]
+pub async fn read_one(req: HttpRequest, pool: web::Data<SqlitePool>, path: web::Path<String>) -> impl Responder{
+    let username = path.into_inner();
+    info!("username: '{}'", &username);
+    match User::from_request(&req, &pool).await {
+        Some(user) =>  if user.is_admin(){
+            if username == "" {
+                HttpResponse::Ok()
+                    .content_type(ContentType::json())
+                    .body(serde_json::to_string(&user).unwrap())
+            }else{
+                match User::search(&pool, &username).await {
+                    Ok(searched_user) =>  HttpResponse::Ok()
+                            .content_type(ContentType::json())
+                            .body(serde_json::to_string(&searched_user).unwrap()),
+                    Err(_) => HttpResponse::NotFound().finish(),
+                }
+            }
+        }else{
+            HttpResponse::Unauthorized().finish()
+        },
         None => HttpResponse::Unauthorized().finish(),
     }
 }
