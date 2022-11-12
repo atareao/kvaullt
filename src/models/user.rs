@@ -51,6 +51,17 @@ impl User{
         }
     }
 
+    pub async fn exists_admin(pool: &web::Data<SqlitePool>) -> bool{
+        let sql = "SELECT count(1) total FROM users where role = 'admin'";
+        match query(sql)
+            .map(|row: SqliteRow| -> i64 {row.get("total")})
+            .fetch_one(pool.get_ref())
+            .await{
+                Ok(total) => total > 0,
+                Err(_) => false
+            }
+    }
+
     pub fn is_admin(&self) -> bool{
         self.role == Role::Admin.to_string()
     }
@@ -96,6 +107,15 @@ impl User{
         let sql = "SELECT * FROM users WHERE token = $1";
         query(sql)
             .bind(token)
+            .map(Self::from_row)
+            .fetch_one(pool.get_ref())
+            .await
+    }
+
+    pub async fn search(pool: &web::Data<SqlitePool>, username: &str) -> Result<User, Error>{
+        let sql = "SELECT * FROM users WHERE username = $1";
+        query(sql)
+            .bind(username)
             .map(Self::from_row)
             .fetch_one(pool.get_ref())
             .await
