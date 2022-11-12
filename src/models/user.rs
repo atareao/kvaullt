@@ -50,6 +50,11 @@ impl User{
             updated_at: row.get("updated_at"),
         }
     }
+
+    pub fn is_admin(&self) -> bool{
+        self.role == Role::Admin.to_string()
+    }
+
     async fn next_id(pool: &web::Data<SqlitePool>) -> Result<i64, Error>{
         let sql = "SELECT MAX(id) max_id FROM users";
         query(sql)
