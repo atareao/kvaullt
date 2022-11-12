@@ -1,13 +1,23 @@
-use actix_web::web;
+use actix_web::{web, HttpRequest};
 use sqlx::{sqlite::{SqlitePool, SqliteRow}, Error, query, Row};
 use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
 use std::env;
 use md5;
+use derive_more::Display;
+
+#[derive(Debug, Display, PartialEq)]
+pub enum Role{
+    #[display(fmt = "admin")]
+    Admin,
+    #[display(fmt = "user")]
+    User,
+}
+
 
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-struct User {
+pub struct User {
     pub id: i64,
     pub username: String,
     pub hashed_password: String,
@@ -18,9 +28,14 @@ struct User {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-struct NewUser<'a> {
-    pub username: &'a str,
-    pub password: &'a str,
+pub struct NewUser {
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Token<'a> {
+    pub token: &'a str,
 }
 
 impl User{
@@ -50,7 +65,7 @@ impl User{
         format!("{:x}", md5::compute(composition))
     }
 
-    pub async fn create(pool: &web::Data<SqlitePool>, role: &str, new: &NewUser<'_>) -> Result<User, Error>{
+    pub async fn create(pool: &web::Data<SqlitePool>, role: &str, new: &NewUser) -> Result<User, Error>{
         let hashed_password = Self::wrap(&new.password);
         let next_id = Self::next_id(&pool).await.unwrap();
         let token = Self::wrap(&next_id.to_string());
@@ -90,5 +105,17 @@ impl User{
             .map(Self::from_row)
             .fetch_one(pool.get_ref())
             .await
+    }
+
+    pub async fn from_request(req: &HttpRequest, pool: &web::Data<SqlitePool>) -> Option<User>{
+        let headers = req.headers();
+        match headers.get("x-api-token"){
+            Some(token) => 
+                match User::read(&pool, &token.to_str().unwrap()).await{
+                    Ok(user) => Some(user),
+                    Err(_) => None,
+                }
+            None => None,
+        }
     }
 }

@@ -6,7 +6,7 @@ use chrono::{DateTime, Utc};
 
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-struct KeyValue {
+pub struct KeyValue {
     pub id: i64,
     pub key: String,
     pub value: String,
@@ -16,9 +16,9 @@ struct KeyValue {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-struct NewKeyValue<'a> {
-    pub key: &'a str,
-    pub value: &'a str,
+pub struct NewKeyValue {
+    pub key: String,
+    pub value: String,
 }
 
 impl KeyValue{
@@ -33,7 +33,7 @@ impl KeyValue{
         }
     }
 
-    pub async fn create(pool: &web::Data<SqlitePool>, user_id: i64, new: &NewKeyValue<'_>) -> Result<KeyValue, Error>{
+    pub async fn create(pool: &web::Data<SqlitePool>, user_id: i64, new: &NewKeyValue) -> Result<KeyValue, Error>{
         let created_at = Utc::now();
         let updated_at = Utc::now();
         let sql = "INSERT INTO keyvalues (key, value, user_id, created_at,
@@ -50,7 +50,17 @@ impl KeyValue{
             .await
     }
 
-    pub async fn update(pool: &web::Data<SqlitePool>, user_id: i64, new: &NewKeyValue<'_>) -> Result<KeyValue, Error>{
+    pub async fn read(pool: &web::Data<SqlitePool>, user_id: i64, key: &str) -> Result<KeyValue, Error>{
+        let sql = "SELECT * FROM keyvalues WHERE user_id = $1 AND key = $2";
+        query(sql)
+            .bind(user_id)
+            .bind(key)
+            .map(Self::from_row)
+            .fetch_one(pool.get_ref())
+            .await
+    }
+
+    pub async fn update(pool: &web::Data<SqlitePool>, user_id: i64, new: &NewKeyValue) -> Result<KeyValue, Error>{
         let updated_at = Utc::now();
         let sql = "UPDATE keyvalues SET value = $1, updated_at = $2 WHERE
                    key = $3 AND user_id = $4 RETURNING id, key, value, user_id,
