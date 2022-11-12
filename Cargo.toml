@@ -28,3 +28,4 @@ tokio = { version = "1.21", features = ["full"]}
 dav-server = { version = "0.5", features = ["actix-compat"]}
 openssl = { version = "0.10", features = ["vendored"] }
 md5 = "0.7"
+derive_more = "0.99"
