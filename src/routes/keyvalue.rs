@@ -13,7 +13,7 @@ pub async fn create(req: HttpRequest, pool: web::Data<SqlitePool>, new: web::Jso
                         .body(serde_json::to_string(&kv).unwrap()),
                     Err(_) => HttpResponse::UnprocessableEntity().finish(),
         },
-        None => HttpResponse::Forbidden().finish(),
+        None => HttpResponse::Unauthorized().finish(),
     }
 }
 
@@ -26,7 +26,7 @@ pub async fn read(req: HttpRequest, pool: web::Data<SqlitePool>, key: String) ->
                 .body(json!({"value": kv.value}).to_string()),
             Err(_) => HttpResponse::NotFound().finish(),
         },
-        None => HttpResponse::Forbidden().finish()
+        None => HttpResponse::Unauthorized().finish()
     }
 }
 
@@ -39,7 +39,7 @@ pub async fn update(req: HttpRequest, pool: web::Data<SqlitePool>, new: web::Jso
                         .body(serde_json::to_string(&kv).unwrap()),
                     Err(_) => HttpResponse::UnprocessableEntity().finish(),
         },
-        None => HttpResponse::Forbidden().finish(),
+        None => HttpResponse::Unauthorized().finish(),
     }
 }
 
@@ -52,7 +52,7 @@ pub async fn delete(req: HttpRequest, pool: web::Data<SqlitePool>, key: String) 
                         .body(serde_json::to_string(&kv).unwrap()),
                     Err(_) => HttpResponse::UnprocessableEntity().finish(),
         },
-        None => HttpResponse::Forbidden().finish(),
+        None => HttpResponse::Unauthorized().finish(),
     }
 }
 
