@@ -1,3 +1,5 @@
 /target
 .nvim
 .env
+*.db-*
+*.db*

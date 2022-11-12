@@ -1,0 +1,23 @@
+GET http://localhost:{{PORT}}/v1/user/david
+x-api-token: 5f1b2514a6ea8756d6f20cae65bfdf22
+
+POST http://localhost:{{PORT}}/v1/user
+Content-Type: application/json
+x-api-token: 5f1b2514a6ea8756d6f20cae65bfdf22
+
+{
+    "username": "david",
+    "password": "12345678"
+}
+
+POST http://localhost:{{PORT}}/v1/kv
+Content-Type: application/json
+x-api-token: 5f1b2514a6ea8756d6f20cae65bfdf22
+
+{
+    "key": "nombre1",
+    "value": "valor"
+}
+
+GET http://localhost:{{PORT}}/v1/kv/nombre1
+x-api-token: 5f1b2514a6ea8756d6f20cae65bfdf22
